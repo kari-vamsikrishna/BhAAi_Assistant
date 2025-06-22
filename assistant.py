@@ -4,10 +4,16 @@ import pyttsx3
 import pywhatkit
 import datetime
 import pyjokes
-import os
 import sys
 from groq import Groq
 from dotenv import load_dotenv
+import os
+import platform
+
+# Only import pyttsx3 if running locally on Windows
+is_local = platform.system() == "Windows"
+if is_local:
+    import pyttsx3
 
 load_dotenv()
 
@@ -25,8 +31,14 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def talk(text):
     print("\n🎙️ GIRI:", text)
-    engine.say(text)
-    engine.runAndWait()
+    if is_local:
+        engine = pyttsx3.init()
+        engine.setProperty('rate', 170)
+        voices = engine.getProperty('voices')
+        engine.setProperty('voice', voices[1].id)
+        engine.say(text)
+        engine.runAndWait()
+
 
 def take_command():
     listener = sr.Recognizer()
