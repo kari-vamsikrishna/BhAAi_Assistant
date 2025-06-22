@@ -1,86 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>GIRI - Your Voice Assistant 🤖</title>
+  <meta charset="UTF-8" />
+  <title>GIRI - Voice Assistant</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #1e1e1e;
-      color: #ffffff;
+      background-color: #121212;
+      color: white;
       text-align: center;
-      padding: 30px;
+      padding: 40px;
     }
-
     h1 {
-      font-size: 2.5rem;
+      color: #00ffc8;
       margin-bottom: 20px;
-      color: #00ffcc;
     }
-
-    #command {
+    input {
+      width: 300px;
       padding: 10px;
-      width: 60%;
       font-size: 16px;
       border-radius: 8px;
       border: none;
-      margin-bottom: 10px;
-    }
-
-    button {
-      background-color: #00ffcc;
-      color: black;
-      border: none;
-      padding: 10px 20px;
       margin: 10px;
+    }
+    button {
+      padding: 10px 16px;
+      font-size: 16px;
+      margin: 5px;
+      background-color: #00ffc8;
+      border: none;
       border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
     }
-
-    button:hover {
-      background-color: #00ddb3;
-    }
-
     #response-box {
-      margin-top: 30px;
-      background-color: #2c2c2c;
-      border-radius: 8px;
+      margin: 20px auto;
+      background-color: #1e1e1e;
       padding: 20px;
+      border-radius: 10px;
       width: 80%;
-      margin-left: auto;
-      margin-right: auto;
-      text-align: left;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      box-shadow: 0 0 10px rgba(0,255,200,0.2);
+    }
+    iframe {
+      margin-top: 20px;
+      display: none;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
 
-  <h1>🎙 GIRI - Your Voice Assistant</h1>
+  <h1>🎙️ GIRI - Voice Assistant</h1>
 
-  <input type="text" id="command" placeholder="Type your command here..." />
+  <input type="text" id="command" placeholder="Ask something..." />
   <br>
   <button onclick="sendTextCommand()">Send</button>
   <button onclick="startVoice()">🎤 Speak</button>
 
   <div id="response-box">
     <h3>📜 GIRI Says:</h3>
-    <pre id="response-text">Waiting for your command...</pre>
+    <div id="response-text">Waiting for your command...</div>
   </div>
+
+  <iframe id="youtube-frame" width="560" height="315"
+          src="" title="YouTube video player"
+          allow="autoplay; encrypted-media" allowfullscreen>
+  </iframe>
 
   <script>
     function sendTextCommand() {
-      const command = document.getElementById('command').value;
-      if (!command) return;
+      const input = document.getElementById("command").value.trim();
+      if (!input) return;
 
       fetch("/giri/text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: command })
+        body: JSON.stringify({ command: input })
       })
       .then(res => res.json())
       .then(data => {
-        document.getElementById("response-text").innerText = data.response;
+        const response = data.response;
+        const box = document.getElementById("response-text");
+        box.innerText = response;
+
+        // 🎥 YouTube video embed if applicable
+        const match = response.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
+        const frame = document.getElementById("youtube-frame");
+        if (match) {
+          const videoId = match[1];
+          frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+          frame.style.display = "block";
+        } else {
+          frame.style.display = "none";
+        }
       })
       .catch(err => {
         document.getElementById("response-text").innerText = "Error: " + err;
@@ -88,29 +103,15 @@
     }
 
     function startVoice() {
-      if (!('webkitSpeechRecognition' in window)) {
-        alert("Your browser doesn't support speech recognition.");
-        return;
-      }
-
-      const recognition = new webkitSpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "en-US";
+      recognition.start();
       recognition.onresult = function(event) {
         const transcript = event.results[0][0].transcript;
-        document.getElementById('command').value = transcript;
-        sendTextCommand(); // send automatically
+        document.getElementById("command").value = transcript;
+        sendTextCommand();
       };
-
-      recognition.onerror = function(event) {
-        document.getElementById("response-text").innerText = "Speech error: " + event.error;
-      };
-
-      recognition.start();
     }
   </script>
-
 </body>
 </html>
