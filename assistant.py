@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, render_template
 import speech_recognition as sr
-import pywhatkit
 import datetime
 import pyjokes
 import sys
