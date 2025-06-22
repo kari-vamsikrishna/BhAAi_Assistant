@@ -135,4 +135,4 @@ if __name__ == "__main__":
     print("🚀 GIRI Flask assistant running!")
     if is_local:
         talk("Yo! I'm GIRI – now running as a Flask web assistant 💡")
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=port)
