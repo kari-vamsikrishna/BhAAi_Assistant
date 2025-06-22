@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize Flask app
-app = Flask(_name_, template_folder='templates')
+app = Flask(__name__, template_folder='templates')
 
 # Initialize speech engine
 engine = pyttsx3.init()
@@ -24,7 +24,7 @@ engine.setProperty('voice', voices[1].id)
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def talk(text):
-    print("\n🎙 GIRI:", text)
+    print("\n🎙️ GIRI:", text)
     engine.say(text)
     engine.runAndWait()
 
@@ -36,7 +36,7 @@ def take_command():
         voice = listener.listen(source)
     try:
         command = listener.recognize_google(voice).lower()
-        print("🗣 You said:", command)
+        print("🗣️ You said:", command)
         return command
     except sr.UnknownValueError:
         return "Sorry bro, I didn’t catch that."
@@ -115,6 +115,6 @@ def giri_voice():
         "response": response
     })
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     talk("Yo! I'm GIRI – now running as a Flask web assistant 💡")
     app.run(debug=True, port=5000)
