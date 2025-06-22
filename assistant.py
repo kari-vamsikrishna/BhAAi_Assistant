@@ -1,47 +1,18 @@
 from flask import Flask, request, jsonify, render_template
 import speech_recognition as sr
-import pyttsx3
-import pywhatkit
 import datetime
 import pyjokes
 import os
-import sys
+import platform
+import webbrowser
 from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize Flask app
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__, template_folder="templates")
 
-# Initialize speech engine
-engine = pyttsx3.init()
-engine.setProperty('rate', 170)
-voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)
-
-# Initialize Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-def talk(text):
-    print("\n🎙️ GIRI:", text)
-    engine.say(text)
-    engine.runAndWait()
-
-def take_command():
-    listener = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("🎧 Listening...")
-        listener.adjust_for_ambient_noise(source)
-        voice = listener.listen(source)
-    try:
-        command = listener.recognize_google(voice).lower()
-        print("🗣️ You said:", command)
-        return command
-    except sr.UnknownValueError:
-        return "Sorry bro, I didn’t catch that."
-    except sr.RequestError:
-        return "Network issue with Google service."
 
 def ask_groq(prompt):
     try:
@@ -63,9 +34,14 @@ def process_command(command):
     command = command.lower().strip()
 
     if "play" in command:
-        song = command.replace("play", "").strip()
-        pywhatkit.playonyt(song)
-        return f"Playing {song} on YouTube 🎶"
+        topic = command.replace("play", "").strip()
+        url = f"https://www.youtube.com/results?search_query={topic.replace(' ', '+')}"
+        if platform.system() in ["Windows", "Darwin"]:  # Darwin = macOS
+            try:
+                webbrowser.open(url)
+            except:
+                pass
+        return f"You can watch {topic} here: {url}"
 
     elif "time" in command:
         return f"It’s {datetime.datetime.now().strftime('%I:%M %p')} ⏰"
@@ -73,16 +49,6 @@ def process_command(command):
     elif "joke" in command:
         return pyjokes.get_joke()
 
-    elif "open chrome" in command:
-        path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-        if os.path.exists(path):
-            os.startfile(path)
-            return "Opening Chrome 🚀"
-        return "Chrome path not found 😬"
-
-    elif "open code" in command:
-        os.system("code")
-        return "Opening VS Code 💻"
 
     elif any(word in command for word in ["exit", "stop", "bye"]):
         return "Okay bro, see you later 👋"
@@ -90,12 +56,10 @@ def process_command(command):
     else:
         return ask_groq(command)
 
-# Home route to serve the HTML UI
 @app.route("/")
 def index():
     return render_template("index.html")
 
-# Text command API endpoint
 @app.route("/giri/text", methods=["POST"])
 def giri_text():
     data = request.json
@@ -105,10 +69,19 @@ def giri_text():
     response = process_command(command)
     return jsonify({"response": response})
 
-# Voice command API (for backend mic only)
 @app.route("/giri/voice", methods=["GET"])
 def giri_voice():
-    command = take_command()
+    # Only for local use
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("🎧 Listening...")
+        recognizer.adjust_for_ambient_noise(source)
+        voice = recognizer.listen(source)
+    try:
+        command = recognizer.recognize_google(voice).lower()
+        print("🗣️ You said:", command)
+    except:
+        command = "Sorry, could not understand."
     response = process_command(command)
     return jsonify({
         "heard": command,
@@ -116,5 +89,5 @@ def giri_voice():
     })
 
 if __name__ == "__main__":
-    talk("Yo! I'm GIRI – now running as a Flask web assistant 💡")
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
