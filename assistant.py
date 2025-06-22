@@ -32,12 +32,17 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 def talk(text):
     print("\n🎙️ GIRI:", text)
     if is_local:
-        engine = pyttsx3.init()
-        engine.setProperty('rate', 170)
-        voices = engine.getProperty('voices')
-        engine.setProperty('voice', voices[1].id)
-        engine.say(text)
-        engine.runAndWait()
+        try:
+            import pyttsx3
+            engine = pyttsx3.init()
+            engine.setProperty('rate', 170)
+            voices = engine.getProperty('voices')
+            engine.setProperty('voice', voices[1].id)
+            engine.say(text)
+            engine.runAndWait()
+        except Exception as e:
+            print("TTS Error:", e)
+
 
 
 def take_command():
