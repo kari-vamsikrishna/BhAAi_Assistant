@@ -8,6 +8,7 @@ from groq import Groq
 from dotenv import load_dotenv
 import os
 import platform
+import webbrowser
 
 # Determine if running locally on Windows (for optional speech)
 is_local = platform.system() == "Windows"
@@ -73,9 +74,14 @@ def process_command(command):
     command = command.lower().strip()
 
     if "play" in command:
-        song = command.replace("play", "").strip()
-        pywhatkit.playonyt(song)
-        return f"Playing {song} on YouTube 🎶"
+            topic = command.replace("play", "").strip()
+            url = f"https://www.youtube.com/results?search_query={topic.replace(' ', '+')}"
+    
+            if platform.system() == "Windows" or platform.system() == "Darwin":  # Darwin = macOS
+                webbrowser.open(url)
+                return f"Opening YouTube for: {topic} 🎶"
+            else:
+                return f"You can watch {topic} here: {url}"
 
     elif "time" in command:
         return f"It’s {datetime.datetime.now().strftime('%I:%M %p')} ⏰"
