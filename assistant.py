@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, render_template
 import speech_recognition as sr
-import pyttsx3
 import pywhatkit
 import datetime
 import pyjokes
@@ -10,25 +9,18 @@ from dotenv import load_dotenv
 import os
 import platform
 
-# Only import pyttsx3 if running locally on Windows
+# Determine if running locally on Windows (for optional speech)
 is_local = platform.system() == "Windows"
-if is_local:
-    import pyttsx3
 
 load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__, template_folder='templates')
 
-# Initialize speech engine
-engine = pyttsx3.init()
-engine.setProperty('rate', 170)
-voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)
-
 # Initialize Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+# Optional local-only TTS
 def talk(text):
     print("\n🎙️ GIRI:", text)
     if is_local:
@@ -43,8 +35,7 @@ def talk(text):
         except Exception as e:
             print("TTS Error:", e)
 
-
-
+# Voice input (only for /giri/voice route)
 def take_command():
     listener = sr.Recognizer()
     with sr.Microphone() as source:
@@ -60,6 +51,7 @@ def take_command():
     except sr.RequestError:
         return "Network issue with Google service."
 
+# Ask Groq LLM
 def ask_groq(prompt):
     try:
         resp = client.chat.completions.create(
@@ -76,6 +68,7 @@ def ask_groq(prompt):
         print("❌ Groq API error:", e)
         return "Sorry, I couldn't get a response from Groq."
 
+# Command handling logic
 def process_command(command):
     command = command.lower().strip()
 
@@ -107,12 +100,12 @@ def process_command(command):
     else:
         return ask_groq(command)
 
-# Home route to serve the HTML UI
+# Homepage route
 @app.route("/")
 def index():
     return render_template("index.html")
 
-# Text command API endpoint
+# Handle text command from UI
 @app.route("/giri/text", methods=["POST"])
 def giri_text():
     data = request.json
@@ -122,7 +115,7 @@ def giri_text():
     response = process_command(command)
     return jsonify({"response": response})
 
-# Voice command API (for backend mic only)
+# Handle voice (mic) command
 @app.route("/giri/voice", methods=["GET"])
 def giri_voice():
     command = take_command()
@@ -132,6 +125,9 @@ def giri_voice():
         "response": response
     })
 
+# Entry point
 if __name__ == "__main__":
-    talk("Yo! I'm GIRI – now running as a Flask web assistant 💡")
+    print("🚀 GIRI Flask assistant running!")
+    if is_local:
+        talk("Yo! I'm GIRI – now running as a Flask web assistant 💡")
     app.run(debug=True, port=5000)
